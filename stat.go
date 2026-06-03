@@ -55,6 +55,15 @@ func sampleHGD(inRange, outRange ValueRange, nsample int, coins <-chan bool) (in
 	return inSample, nil
 }
 
+func floorDiv(a, b int) int {
+	q := a / b
+	// if the result was negative and there's a remainder, round down instead of up
+	if (a^b) < 0 && a*b != a {
+		q--
+	}
+	return q
+}
+
 // sampleUniform picks a value from inRange using binary search guided by bits from coins. Each bit decides whether to take the lower or upper half of the current range, narrowing it until only one value remains.
 func sampleUniform(inRange ValueRange, coins <-chan bool) (int, error) {
 	cur := inRange.Copy()
@@ -62,7 +71,7 @@ func sampleUniform(inRange ValueRange, coins <-chan bool) (int, error) {
 		return 0, ErrInvalidRanges
 	}
 	for cur.Size() > 1 {
-		mid := (cur.Start + cur.End) / 2
+		mid := floorDiv(cur.Start+cur.End, 2)
 		bit := <-coins
 		if bit == false {
 			cur.End = mid
