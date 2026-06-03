@@ -1,6 +1,9 @@
 package goope
 
-import "testing"
+import (
+	"math/rand"
+	"testing"
+)
 
 func makeCoinChan(pattern []int) <-chan bool {
 	ch := make(chan bool, 256)
@@ -9,6 +12,18 @@ func makeCoinChan(pattern []int) <-chan bool {
 			for _, p := range pattern {
 				ch <- p == 1
 			}
+		}
+	}()
+	return ch
+}
+
+// realCoinChan returns a channel of random bits
+func realCoinChan(seed int64) <-chan bool {
+	ch := make(chan bool, 256)
+	go func() {
+		r := rand.New(rand.NewSource(seed))
+		for {
+			ch <- r.Intn(2) == 1
 		}
 	}()
 	return ch
