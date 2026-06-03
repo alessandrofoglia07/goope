@@ -29,14 +29,14 @@ type OPE struct {
 // The output range must be at least as large as the input range.
 // If ranges are nil, sensible defaults will be used: [0, 2^15 - 1] for input and [0, 2^31 - 1] for output.
 func NewOPE(key []byte, inRange, outRange *ValueRange) (*OPE, error) {
-	if inRange.Size() > outRange.Size() {
-		return nil, ErrInvalidRanges
-	}
 	if inRange == nil {
 		inRange = &ValueRange{Start: DEFAULT_IN_RANGE_START, End: DEFAULT_IN_RANGE_END}
 	}
 	if outRange == nil {
 		outRange = &ValueRange{Start: DEFAULT_OUT_RANGE_START, End: DEFAULT_OUT_RANGE_END}
+	}
+	if inRange.Size() > outRange.Size() {
+		return nil, ErrInvalidRanges
 	}
 	return &OPE{
 		key:      key,
@@ -156,7 +156,7 @@ func (o *OPE) decrypt(ciphertext int) (int, error) {
 			if err != nil {
 				return 0, err
 			}
-			if sampled != ciphertext {
+			if sampled == ciphertext {
 				return inRange.Start, nil
 			}
 			return 0, ErrInvalidCiphertext

@@ -60,7 +60,7 @@ func loggam(x float64) float64 {
 	gl := gl0/x0 + 0.5*math.Log(xp) + (x0-0.5)*math.Log(x0) - x0
 	if x <= 7.0 {
 		for k := 1; k <= n; k++ {
-			gl -= math.Log(x0 - float64(k))
+			gl -= math.Log(x0 - 1.0)
 			x0 -= 1.0
 		}
 	}

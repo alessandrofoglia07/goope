@@ -70,8 +70,5 @@ func sampleUniform(inRange ValueRange, coins <-chan bool) (int, error) {
 			cur.Start = mid + 1
 		}
 	}
-	if cur.Size() != 1 {
-		return 0, ErrInvalidRanges
-	}
 	return cur.Start, nil
 }
