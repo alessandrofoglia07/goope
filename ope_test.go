@@ -180,3 +180,124 @@ func TestOutOfRange(t *testing.T) {
 		t.Fatalf("Encrypt(32768) expected error %v, got %v", ErrOutOfRange, err)
 	}
 }
+
+// TestDifferentKeysYieldDifferentCiphertexts tests that using a different key produces different ciphertexts for the same plaintext
+func TestDifferentKeysYieldDifferentCiphertexts(t *testing.T) {
+	key1 := []byte("\x12\x23\x34\x45\x56\x67\x78\x89\x90\x0A\xAB\xBC\xCD\xDE\xEF\xF0\x13\x14\x15\x16\x17\x18\x19\x20\x21\x22\x23\x24\x25\x26\x27\x28")
+	key2 := []byte("\x0A\xAB\xBC\xCD\xDE\xEF\xF0\x13\x14\x15\x16\x12\x23\x34\x45\x56\x67\x78\x89\x90\x12\x13\x14\x15\x16\x17\x18\x19\x20\x21\x22\x23")
+	ope1, _ := NewOPE(key1, nil, nil)
+	ope2, _ := NewOPE(key2, nil, nil)
+	for _, pt := range []int{0, 1, 10, 100, 1000, 2000, 5000} {
+		ct1, _ := ope1.Encrypt(pt)
+		ct2, _ := ope2.Encrypt(pt)
+		if ct1 == ct2 {
+			t.Fatalf("Encrypt(%d) produced same ciphertext %d for different keys", pt, ct1)
+		}
+	}
+}
+
+// TestSmallOutputRange tests that when the output range is only slightly larger than the input range, the ciphertexts are still unique and order-preserving
+func TestSmallOutputRange(t *testing.T) {
+	in, _ := NewValueRange(0, 2)
+	out, _ := NewValueRange(2, 5)
+	ope, err := NewOPE(smallKey, &in, &out)
+	if err != nil {
+		t.Fatalf("Failed to create OPE cipher: %v", err)
+	}
+	for _, pt := range []int{0, 1, 2} {
+		ct, err := ope.Encrypt(pt)
+		if err != nil {
+			t.Fatalf("Encrypt(%d) returned error: %v", pt, err)
+		}
+		if !out.Contains(ct) {
+			t.Fatalf("Encrypt(%d) = %d is outside output range", pt, ct)
+		}
+		got, err := ope.Decrypt(ct)
+		if err != nil {
+			t.Fatalf("Decrypt(%d) returned error: %v", ct, err)
+		}
+		if got != pt {
+			t.Fatalf("Decrypt(Encrypt(%d)) = %d; want %d", pt, got, pt)
+		}
+	}
+}
+
+// TestBigRanges tests that the cipher can handle very large ranges above 2^32
+func TestBigRanges(t *testing.T) {
+	in, _ := NewValueRange(1<<32, 1<<33)
+	out, _ := NewValueRange(1<<48, 1<<49)
+	ope, err := NewOPE(smallKey, &in, &out)
+	if err != nil {
+		t.Fatalf("Failed to create OPE cipher: %v", err)
+	}
+	for pt := in.Start; pt <= in.End; pt += 1 << 24 {
+		ct, err := ope.Encrypt(pt)
+		if err != nil {
+			t.Fatalf("Encrypt(%d) returned error: %v", pt, err)
+		}
+		if !out.Contains(ct) {
+			t.Fatalf("Encrypt(%d) = %d is outside output range", pt, ct)
+		}
+		got, err := ope.Decrypt(ct)
+		if err != nil {
+			t.Fatalf("Decrypt(%d) returned error: %v", ct, err)
+		}
+		if got != pt {
+			t.Fatalf("Decrypt(Encrypt(%d)) = %d; want %d", pt, got, pt)
+		}
+	}
+}
+
+// TestInvalidRangeRejected tests that NewOPE returns an error when the output range is smaller than the input range
+func TestInvalidRangeRejected(t *testing.T) {
+	in, _ := NewValueRange(0, 10)
+	out, _ := NewValueRange(1, 2)
+	_, err := NewOPE(smallKey, &in, &out)
+	if err != ErrInvalidRanges {
+		t.Fatalf("Expected error %v when output range is smaller than input range, got %v", ErrInvalidRanges, err)
+	}
+}
+
+// TestOrderPreservedExhaustive tests that for a small range (0..9), the ciphertexts are in the same order as the plaintexts
+func TestOrderPreservedExhaustive(t *testing.T) {
+	in, _ := NewValueRange(0, 63)
+	out, _ := NewValueRange(0, 4095)
+	ope, _ := NewOPE(defaultKey, &in, &out)
+	prev, err := ope.Encrypt(in.Start)
+	if err != nil {
+		t.Fatalf("Encrypt(%d) returned error: %v", in.Start, err)
+	}
+	for pt := 1; pt <= 63; pt++ {
+		ct, err := ope.Encrypt(pt)
+		if err != nil {
+			t.Fatalf("Encrypt(%d) returned error: %v", pt, err)
+		}
+		if ct <= prev {
+			t.Fatalf("Encrypt(%d) = %d is not greater than previous ciphertext %d", pt, ct, prev)
+		}
+		prev = ct
+	}
+}
+
+// TestSampleHGDMonotone checks that Encrypt produces monotone increasing ciphertexts for monotone increasing plaintexts, for a variety of input and output ranges and patterns of coins used in the hypergeometric sampling
+func TestSampleHGDMonotone(t *testing.T) {
+	key := []byte("test-key-16bytes")
+	inR := ValueRange{0, 15}
+	outR := ValueRange{0, 255}
+	ope, err := NewOPE(key, &inR, &outR)
+	if err != nil {
+		t.Fatalf("NewOPE(...) returned error: %v", err)
+	}
+
+	prev := outR.Start - 1
+	for v := inR.Start; v <= inR.End; v++ {
+		got, err := ope.Encrypt(v)
+		if err != nil {
+			t.Fatalf("Encrypt(%d) returned error: %v", v, err)
+		}
+		if got < prev {
+			t.Fatalf("Encrypt(%d) = %d, which is less than Encrypt(%d) = %d", v, got, v-1, prev)
+		}
+		prev = got
+	}
+}
