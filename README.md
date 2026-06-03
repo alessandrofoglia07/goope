@@ -1,5 +1,9 @@
 # goope
 
+![GitHub Tag](https://img.shields.io/github/v/tag/alessandrofoglia07/goope)
+[![GoDoc](https://pkg.go.dev/badge/github.com/alessandrofoglia07/goope)](https://pkg.go.dev/github.com/alessandrofoglia07/goope)
+[![Go Report Card](https://goreportcard.com/badge/alessandrofoglia07/goope)](https://goreportcard.com/report/alessandrofoglia07/goope)
+
 A Go implementation of the [Boldyreva Order-Preserving Encryption](https://faculty.cc.gatech.edu/~aboldyre/papers/bclo.pdf) (OPE) scheme, ported from [tonyo/pyope](https://github.com/tonyo/pyope).
 
 OPE encrypts integers to integers while preserving their relative order: if `x < y`, then `OPE(x) < OPE(y)`. This allows to perform range queries and comparisons directly on encrypted data stored in a database, without needing to decrypt it first.
@@ -231,7 +235,7 @@ go test -v ./...
 
 ## License
 
-This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Credits
 

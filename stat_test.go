@@ -100,7 +100,7 @@ func TestSampleUniformTwoBitRange(t *testing.T) {
 	}
 }
 
-// TestSampleUniformMediumRange checks specific bit sequences agains a 16-element range [20, 35]
+// TestSampleUniformMediumRange checks specific bit sequences against a 16-element range [20, 35]
 func TestSampleUniformMediumRange(t *testing.T) {
 	r := ValueRange{20, 35}
 
