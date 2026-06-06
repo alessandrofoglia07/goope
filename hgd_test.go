@@ -31,9 +31,9 @@ func realCoinChan(seed int64) <-chan bool {
 
 func TestRhyper(t *testing.T) {
 	tests := []struct {
-		kk, nn1, nn2 int
+		kk, nn1, nn2 int64
 		pattern      []int
-		want         int
+		want         int64
 	}{
 		// Small kk -> hypergeometricHYP path
 		{kk: 1, nn1: 10, nn2: 10, pattern: []int{1, 0, 1, 0, 1, 0, 1, 0}, want: 1},

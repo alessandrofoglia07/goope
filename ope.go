@@ -47,7 +47,7 @@ func NewOPE(key []byte, inRange, outRange *ValueRange) (*OPE, error) {
 
 // Encrypt encrypts a plaintext integer to a ciphertext integer.
 // The plaintext must be within the input range.
-func (o *OPE) Encrypt(plaintext int) (int, error) {
+func (o *OPE) Encrypt(plaintext int64) (int64, error) {
 	if !o.inRange.Contains(plaintext) {
 		return 0, ErrOutOfRange
 	}
@@ -56,7 +56,7 @@ func (o *OPE) Encrypt(plaintext int) (int, error) {
 
 // Decrypt decrypts a ciphertext integer to a plaintext integer.
 // The ciphertext must be within the output range.
-func (o *OPE) Decrypt(ciphertext int) (int, error) {
+func (o *OPE) Decrypt(ciphertext int64) (int64, error) {
 	if !o.outRange.Contains(ciphertext) {
 		return 0, ErrOutOfRange
 	}
@@ -64,12 +64,12 @@ func (o *OPE) Decrypt(ciphertext int) (int, error) {
 }
 
 // tapeGen produces an infinite deterministic stream of random bits for the given integer value.
-func (o *OPE) tapeGen(data int) <-chan bool {
+func (o *OPE) tapeGen(data int64) <-chan bool {
 	ch := make(chan bool, 128)
 	go func() {
 		// HMAC-SHA256(key, str(data)) -> 32 bytes digest
 		mac := hmac.New(sha256.New, o.key)
-		mac.Write([]byte(strconv.Itoa(data)))
+		mac.Write([]byte(strconv.FormatInt(data, 10)))
 		digest := mac.Sum(nil)
 
 		if len(digest) != 32 {
@@ -97,7 +97,7 @@ func (o *OPE) tapeGen(data int) <-chan bool {
 }
 
 // encrypt repeatedly partitions the input and output ranges using the hypergeometric distribution to find the split point, until the input range shrinks to a single value, which is then mapped to a uniformly sampled value in the corresponding output range.
-func (o *OPE) encrypt(plaintext int) (int, error) {
+func (o *OPE) encrypt(plaintext int64) (int64, error) {
 	inRange := o.inRange.Copy()
 	outRange := o.outRange.Copy()
 
@@ -106,7 +106,7 @@ func (o *OPE) encrypt(plaintext int) (int, error) {
 		outSize := outRange.Size()
 		inEdge := inRange.Start - 1
 		outEdge := outRange.Start - 1
-		mid := outEdge + int(math.Ceil(float64(outSize)/2.0))
+		mid := outEdge + int64(math.Ceil(float64(outSize)/2.0))
 
 		if inSize > outSize {
 			return 0, ErrInvalidRanges
@@ -135,7 +135,7 @@ func (o *OPE) encrypt(plaintext int) (int, error) {
 }
 
 // decrypt mirrors encrypt but uses ciphertext <= mid as the branching condition.
-func (o *OPE) decrypt(ciphertext int) (int, error) {
+func (o *OPE) decrypt(ciphertext int64) (int64, error) {
 	inRange := o.inRange.Copy()
 	outRange := o.outRange.Copy()
 
@@ -144,7 +144,7 @@ func (o *OPE) decrypt(ciphertext int) (int, error) {
 		outSize := outRange.Size()
 		inEdge := inRange.Start - 1
 		outEdge := outRange.Start - 1
-		mid := outEdge + int(math.Ceil(float64(outSize)/2.0))
+		mid := outEdge + int64(math.Ceil(float64(outSize)/2.0))
 
 		if inSize > outSize {
 			return 0, ErrInvalidRanges

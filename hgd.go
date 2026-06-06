@@ -68,7 +68,7 @@ func loggam(x float64) float64 {
 }
 
 // Rhyper returns a hypergeometric random variate: the number of "good" items drawn when drawing kk items from a pool of nn1 "good" items and nn2 "bad" items, without replacement.
-func Rhyper(kk, nn1, nn2 int, coins <-chan bool) int {
+func Rhyper(kk, nn1, nn2 int64, coins <-chan bool) int64 {
 	prng := &PRNG{coins: coins}
 	if kk > 10 {
 		return hypergeometricHRUA(prng, nn1, nn2, kk)
@@ -76,7 +76,7 @@ func Rhyper(kk, nn1, nn2 int, coins <-chan bool) int {
 	return hypergeometricHYP(prng, nn1, nn2, kk)
 }
 
-func min(a, b int) int {
+func min(a, b int64) int64 {
 	if a < b {
 		return a
 	}
@@ -84,7 +84,7 @@ func min(a, b int) int {
 }
 
 // hypergeometricHYP implements the hypergeometric distribution using the HYP algorithm, which is efficient for small sample sizes (kk <= 10)
-func hypergeometricHYP(prng *PRNG, good, bad, sample int) int {
+func hypergeometricHYP(prng *PRNG, good, bad, sample int64) int64 {
 	d1 := bad + good - sample
 	d2 := float64(min(bad, good))
 
@@ -98,7 +98,7 @@ func hypergeometricHYP(prng *PRNG, good, bad, sample int) int {
 			break
 		}
 	}
-	Z := int(d2 - Y)
+	Z := int64(d2 - Y)
 	if good > bad {
 		Z = sample - Z
 	}
@@ -106,7 +106,7 @@ func hypergeometricHYP(prng *PRNG, good, bad, sample int) int {
 }
 
 // hypergeometricHRUA implements the hypergeometric distribution using the HRUA (Hypergeometric Ratio of Uniforms with Aliasing) algorithm, which is efficient for larger sample sizes (kk > 10). The d4-d11 values are precomputed constants that make the accept/reject process more efficient.
-func hypergeometricHRUA(prng *PRNG, good, bad, sample int) int {
+func hypergeometricHRUA(prng *PRNG, good, bad, sample int64) int64 {
 	const D1 = 1.7155277699214135
 	const D2 = 0.8989161620588988
 
@@ -120,12 +120,12 @@ func hypergeometricHRUA(prng *PRNG, good, bad, sample int) int {
 	d6 := float64(m)*d4 + 0.5
 	d7 := math.Sqrt(float64(popsize-m)*float64(sample)*d4*d5/float64(popsize-1) + 0.5)
 	d8 := D1*d7 + D2
-	d9 := int(math.Floor(float64(m+1) * float64(mingoodbad+1) / float64(popsize+2)))
+	d9 := int64(math.Floor(float64(m+1) * float64(mingoodbad+1) / float64(popsize+2)))
 	d10 := loggam(float64(d9+1)) + loggam(float64(mingoodbad-d9+1)) +
 		loggam(float64(m-d9+1)) + loggam(float64(maxgoodbad-m+d9+1))
 	d11 := math.Min(float64(min(m, mingoodbad))+1.0, math.Floor(d6+16*d7))
 
-	var Z int
+	var Z int64
 	for {
 		X := prng.Draw()
 		Y := prng.Draw()
@@ -136,7 +136,7 @@ func hypergeometricHRUA(prng *PRNG, good, bad, sample int) int {
 			continue
 		}
 
-		Z = int(math.Floor(W))
+		Z = int64(math.Floor(W))
 		T := d10 - (loggam(float64(Z+1)) + loggam(float64(mingoodbad-Z+1)) +
 			loggam(float64(m-Z+1)) + loggam(float64(maxgoodbad-m+Z+1)))
 

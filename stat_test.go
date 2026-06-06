@@ -5,7 +5,7 @@ import "testing"
 // TestValueRangeSize tests that Size() counts both endpoints as inclusive
 func TestValueRangeSize(t *testing.T) {
 	tests := []struct {
-		start, end, want int
+		start, end, want int64
 	}{
 		{2, 1000, 999},          // normal range
 		{0, 0, 1},               // single element
@@ -24,12 +24,12 @@ func TestValueRangeSize(t *testing.T) {
 // TestValueRangeContains checks boundary conditions for Contains()
 func TestValueRangeContains(t *testing.T) {
 	r := ValueRange{2, 1000}
-	for _, v := range []int{2, 3, 500, 999, 1000} {
+	for _, v := range []int64{2, 3, 500, 999, 1000} {
 		if !r.Contains(v) {
 			t.Errorf("ValueRange{%d, %d}.Contains(%d) = false, want true", r.Start, r.End, v)
 		}
 	}
-	for _, v := range []int{1, 0, -1, 1001, 10000} {
+	for _, v := range []int64{1, 0, -1, 1001, 10000} {
 		if r.Contains(v) {
 			t.Errorf("ValueRange{%d, %d}.Contains(%d) = true, want false", r.Start, r.End, v)
 		}
@@ -75,7 +75,7 @@ func makeBoolChan(bits []int) <-chan bool {
 
 // TestSampleUniformUnitRange checks that a single-element range always returns that element, consuming no bits at all
 func TestSampleUniformUnitRange(t *testing.T) {
-	for _, v := range []int{0, 10, -5, 1 << 20} {
+	for _, v := range []int64{0, 10, -5, 1 << 20} {
 		r := ValueRange{v, v}
 		got, err := sampleUniform(r, makeBoolChan(nil))
 		if err != nil {
@@ -106,7 +106,7 @@ func TestSampleUniformMediumRange(t *testing.T) {
 
 	tests := []struct {
 		bits []int
-		want int
+		want int64
 	}{
 		{[]int{0, 0, 0, 0}, 20}, // all-left  -> start
 		{[]int{0, 0, 0, 1}, 21}, // one step right of start
@@ -186,7 +186,7 @@ func TestSampleUniformResultAlwaysInRange(t *testing.T) {
 func TestSampleHGDEqualRanges(t *testing.T) {
 	inR := ValueRange{0, 9}
 	outR := ValueRange{0, 9}
-	for nsample := 0; nsample < 9; nsample++ {
+	for nsample := int64(0); nsample < 9; nsample++ {
 		got, err := sampleHGD(inR, outR, nsample, makeCoinChan([]int{0}))
 		if err != nil {
 			t.Fatalf("sampleHGD(%v, %v, %d, ...) returned error: %v", inR, outR, nsample, err)
@@ -201,8 +201,8 @@ func TestSampleHGDEqualRanges(t *testing.T) {
 func TestSampleHGDResultAlwaysInInputRange(t *testing.T) {
 	inR := ValueRange{0, 9}
 	outR := ValueRange{0, 99}
-	for nsample := 0; nsample <= outR.End; nsample += 7 {
-		got, err := sampleHGD(inR, outR, nsample, realCoinChan(int64(nsample)))
+	for nsample := int64(0); nsample <= outR.End; nsample += 7 {
+		got, err := sampleHGD(inR, outR, nsample, realCoinChan(nsample))
 		if err != nil {
 			t.Fatalf("sampleHGD(%v, %v, %d, ...) returned error: %v", inR, outR, nsample, err)
 		}
@@ -216,8 +216,8 @@ func TestSampleHGDResultAlwaysInInputRange(t *testing.T) {
 func TestSampleHGDNSampleAtBoundaries(t *testing.T) {
 	inR := ValueRange{0, 9}
 	outR := ValueRange{0, 99}
-	for _, nsample := range []int{outR.Start, outR.End} {
-		got, err := sampleHGD(inR, outR, nsample, realCoinChan(int64(nsample)))
+	for _, nsample := range []int64{outR.Start, outR.End} {
+		got, err := sampleHGD(inR, outR, nsample, realCoinChan(nsample))
 		if err != nil {
 			t.Fatalf("sampleHGD(%v, %v, %d, ...) returned error: %v", inR, outR, nsample, err)
 		}
